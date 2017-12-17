@@ -23,7 +23,7 @@ def http_handler(event, contect):
         body = parse_body(event)
         if body.get('user_id') == 'USLACKBOT':
             return None  # 無限ループ対策
-        if body.get('text') == None:
+        if body.get('text') is None:
             return None
         if body.get('token') != TOKEN:
             return None
@@ -90,4 +90,3 @@ def main(body):
     if 'XXX' == text:
         # 例外テスト
         print(10/0)
-

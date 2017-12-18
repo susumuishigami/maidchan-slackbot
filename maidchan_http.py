@@ -3,6 +3,7 @@ import random
 import urllib
 import traceback
 import os
+import re
 
 
 TOKEN = os.environ['TOKEN']
@@ -65,28 +66,28 @@ def message(text):
 
 def main(body):
     text = body['text']
-    if 'おはよう' in text:
+    if re.search('おはよう', text):
         return OHAYO_MESSAGE.format(body.get('user_id'))
 
-    if 'おやすみ' in text:
+    if re.search('おやすみ', text):
         return OYASUMI_MESSAGE.format(body.get('user_id'))
 
-    if '帰' in text or 'きたく' in text or 'かえる' in text:
+    if re.search('(帰|きたく|かえる)', text):
         return OKAERI_MESSAGE.format(body.get('user_id'))
 
-    if '疲' in text or 'つかれ' in text or 'おわた' in text or 'おわった' in text or '終' in text:
+    if re.search('(疲|つかれ|おわた|おわった|終)', text):
         return OTSUKARE_MESSAGE.format(body.get('user_id'))
 
-    if '行ってきます' in text or '出かけます' in text or '行きます' in text or 'いきます' in text or 'いってきます' in text:
+    if re.search('(行ってきます|出かけます|行きます|いきます|いってきます)', text):
         return ITERA_MESSAGE.format(body.get('user_id'))
 
-    if text.startswith('えらんで！'):
+    if re.search('^えらんで！', text):
         selection = text[len('えらんで！'):].replace('、', ' ').split()
         return 'どれにしようかなあ。。。じゃあ {} ちゃんに決めた！'.format(random.choice(selection))
 
-    if ('かわいい' in text or '可愛い' in text) and '@maidchan' in text:
+    if re.search('(かわいい|可愛い)', text) and re.search('@maidchan', text):
         return TERE_MESSAGE
 
-    if 'XXX' == text:
+    if re.search('XXX', text):
         # 例外テスト
         print(10/0)

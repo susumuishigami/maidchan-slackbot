@@ -33,8 +33,9 @@ def scheduled_handler(event, context):
 
     if hour == 22:
         message(OYASUMI_MESSAGE.format(hour))
-        
-    message(get_weather())
+    
+    if testing:    
+        message(get_weather())
     
     
 def message(text):

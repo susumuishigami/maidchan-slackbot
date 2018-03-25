@@ -1,3 +1,4 @@
+import datetime
 import json
 import random
 import urllib
@@ -26,7 +27,7 @@ def http_handler(event, contect):
             return None  # 無限ループ対策
         if body.get('text') is None:
             return None
-        if body.get('token') != TOKEN:
+        if body.get('token') in TOKEN.split():
             return None
 
         print('http recieved:', body)
@@ -66,6 +67,20 @@ def message(text):
 
 def main(body):
     text = body['text']
+    
+    for suffix in ('どれがいいかな', 'どっちがいいかな', 'どれがいいかな？', 'どっちがいいかな？'):
+        if text.endswith(suffix):
+            selection = text[:-len(suffix)].replace('、', ' ').split()
+            choosed = random.choice(selection)
+            return 'どうしようかなあ。。。じゃあ {} が良いと思う！'.format(choosed)
+
+    if ('かわいい' in text or '可愛い' in text) and MAIDNAME in text:
+        return random.choice(TERE_MESSAGES)
+        
+    if text.startswith('占って！！'):
+        birthday = text[-4:]
+        return uranai(body.get('user_id'), birthday)
+    
     if in_keyword(text, 'おはよう', 'おはよー'):
         return OHAYO_MESSAGE.format(body.get('user_id'))
         
@@ -81,15 +96,6 @@ def main(body):
     if in_keyword(text, '行ってきます', 'いってきます', '出かけ', '行きます', 'いきます', '出発'):
         return ITERA_MESSAGE.format(body.get('user_id'))
     
-    for suffix in ('どれがいいかな？', 'どっちがいいかな？'):
-        selection = text[:len(suffix)].replace('、', ' ').split()
-        choosed = random.choice(selection)
-        choosed = choosed_format(choosed)
-        return 'どうしようかなあ。。。じゃあ {} が良いと思う！'.format(choosed)
-
-    if ('かわいい' in text or '可愛い' in text) and MAIDNAME in text:
-        return random.choice(TERE_MESSAGES)
-
     if 'XXX' == text:
         # 例外テスト
         print(10/0)
@@ -99,3 +105,37 @@ def in_keyword(text, *keyword):
         if k in text:
             return True
     return False
+
+    
+def uranai(user_id, birthday):
+    # The uranai() function is:
+    #
+    #    Copyright (c) 2016 beproud
+    #    https://github.com/beproud/beproudbot
+    today = datetime.date.today().strftime('%Y/%m/%d')
+    response = urllib.request.urlopen('http://api.jugemkey.jp/api/horoscope/free/{}'.format(today))
+    data = json.loads(response.read().decode('utf8'))
+    month, day = int(birthday[:2]), int(birthday[2:])
+    period = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 23]
+    n = (month + 8 + (day >= period[(month - 1) % 12])) % 12
+    d = data['horoscope'][today][n]
+    for s in ['total', 'love', 'money', 'job']:
+        d[s] = star(d[s])
+    return """\
+<@{}> 様の今日の運勢はこちらです！
+{rank}位 {sign}
+総合: {total}
+恋愛運: {love}
+金運: {money}
+仕事運: {job}
+ラッキーカラー: {color}
+ラッキーアイテム: {item}
+{content}""".format(user_id, **d)
+
+
+def star(n):
+    # The star() function is:
+    #
+    #    Copyright (c) 2016 beproud
+    #    https://github.com/beproud/beproudbot
+    return '★' * n + '☆' * (5 - n)

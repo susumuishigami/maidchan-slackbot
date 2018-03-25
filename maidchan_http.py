@@ -15,7 +15,8 @@ OYASUMI_MESSAGE = '(｡･ω･｡)ﾉ おやすみなさいませ。 <@{}> 様'
 OKAERI_MESSAGE = 'おかえりなさいませ！ <@{}> 様 （*´▽｀*）'
 ITERA_MESSAGE = '(★･∀･)ﾉ〃行ってらっしゃいませ！ <@{}> 様'
 OTSUKARE_MESSAGE = 'お疲れ様です。 <@{}> 様 ＼(^o^)／'
-TERE_MESSAGE = "ありがとう！ (〃'∇'〃)ゝｴﾍﾍ"
+TERE_MESSAGES = ["ありがとう！ (〃'∇'〃)ゝｴﾍﾍ",
+                 "そんなことないよ！（*´▽｀*）"]
 
 
 def http_handler(event, contect):
@@ -65,28 +66,36 @@ def message(text):
 
 def main(body):
     text = body['text']
-    if 'おはよう' in text:
+    if in_keyword(text, 'おはよう', 'おはよー'):
         return OHAYO_MESSAGE.format(body.get('user_id'))
-
-    if 'おやすみ' in text:
+        
+    if in_keyword(text, 'おやすみ'):
         return OYASUMI_MESSAGE.format(body.get('user_id'))
 
-    if '帰' in text or 'きたく' in text or 'かえる' in text:
+    if in_keyword(text, '帰', 'ただいま', 'きたく', 'かえる'):
         return OKAERI_MESSAGE.format(body.get('user_id'))
 
-    if '疲' in text or 'つかれ' in text or 'おわた' in text or 'おわった' in text or '終' in text:
+    if in_keyword(text, '疲', 'つかれ', '終', 'おわた', 'おわった'):
         return OTSUKARE_MESSAGE.format(body.get('user_id'))
-
-    if '行ってきます' in text or '出かけます' in text or '行きます' in text or 'いきます' in text or 'いってきます' in text:
+        
+    if in_keyword(text, '行ってきます', 'いってきます', '出かけ', '行きます', 'いきます', '出発'):
         return ITERA_MESSAGE.format(body.get('user_id'))
+    
+    for suffix in ('どれがいいかな？', 'どっちがいいかな？'):
+        selection = text[:len(suffix)].replace('、', ' ').split()
+        choosed = random.choice(selection)
+        choosed = choosed_format(choosed)
+        return 'どうしようかなあ。。。じゃあ {} が良いと思う！'.format(choosed)
 
-    if text.startswith('えらんで！'):
-        selection = text[len('えらんで！'):].replace('、', ' ').split()
-        return 'どれにしようかなあ。。。じゃあ {} ちゃんに決めた！'.format(random.choice(selection))
-
-    if ('かわいい' in text or '可愛い' in text) and '@maidchan' in text:
-        return TERE_MESSAGE
+    if ('かわいい' in text or '可愛い' in text) and MAIDNAME in text:
+        return random.choice(TERE_MESSAGES)
 
     if 'XXX' == text:
         # 例外テスト
         print(10/0)
+
+def in_keyword(text, *keyword):
+    for k in keyword:
+        if k in text:
+            return True
+    return False

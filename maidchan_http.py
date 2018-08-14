@@ -1,15 +1,16 @@
 import datetime
 import json
 import random
-import urllib
+import urllib.request
 import traceback
+import textwrap
 import os
 import re
 
 
-ZATSUDAN_TOKEN = os.environ['ZATSUDAN_TOKEN']
-ALL_TOKEN = os.environ['ALL_TOKEN']
-MAIDNAME = os.environ['MAIDNAME']
+ZATSUDAN_TOKEN = os.environ.get('ZATSUDAN_TOKEN')
+ALL_TOKEN = os.environ.get('ALL_TOKEN')
+MAIDNAME = os.environ.get('MAIDNAME')
 
 
 ERROR_MESSAGE = '(ﾉД`)ご主人様助けて〜シクシク {} だよー'
@@ -18,8 +19,6 @@ OYASUMI_MESSAGE = '(｡･ω･｡)ﾉ おやすみなさいませ。 <@{}> 様'
 OKAERI_MESSAGE = 'おかえりなさいませ！ <@{}> 様 （*´▽｀*）'
 ITERA_MESSAGE = '(★･∀･)ﾉ〃行ってらっしゃいませ！ <@{}> 様'
 OTSUKARE_MESSAGE = 'お疲れ様です。 <@{}> 様 ＼(^o^)／'
-TERE_MESSAGES = ["ありがとう！ (〃'∇'〃)ゝｴﾍﾍ",
-                 "そんなことないよ！（*´▽｀*）"]
 
 
 def http_handler(event, contect):
@@ -31,7 +30,7 @@ def http_handler(event, contect):
             return None
         if body.get('token') in ZATSUDAN_TOKEN.split(','):
             print('zatsudan token recieved:', body)
-            result = zatsudan_main(body)
+            result = 雑談カフェのお仕事(body)
             if result:
                 return message(result)
             else:
@@ -39,7 +38,7 @@ def http_handler(event, contect):
                 
         if body.get('token') in ALL_TOKEN.split(','):
             print('all_message recieved:', body)
-            result = all_main(body)
+            result = 全体のお仕事(body)
             if result:
                 return message(result)
             else:
@@ -81,58 +80,61 @@ def in_keyword(text, *keyword):
             return True
     return False
 
+class どれがいいかな:
+    """
+    迷うことがあったら雑談カフェで私に行ってね！私が選んであげるよ！「いか、たこどっちがいいかな？」「赤　青　きいろどれがいいかな？」みたいに聞いてね！
+    """
+    def get_suffix(self, text):
+        for suffix in ('どれがいいかな', 'どっちがいいかな', 'どれがいいかな？', 'どっちがいいかな？'):
+            if text.endswith(suffix):
+                return suffix
+    def 呼び出し(self, text, body):
+        if self.get_suffix(text):
+            return True
+        return False
 
-def zatsudan_main(body):
-    text = body['text']
-    
-    for suffix in ('どれがいいかな', 'どっちがいいかな', 'どれがいいかな？', 'どっちがいいかな？'):
-        if text.endswith(suffix):
-            selection = text[:-len(suffix)].replace('、', ' ').split()
-            choosed = random.choice(selection)
-            return 'どうしようかなあ。。。じゃあ {} が良いと思う！'.format(choosed)
+    def やったよ(self, text, body):
+        suffix = self.get_suffix(text)
+        selection = text[:-len(suffix)].replace('、', ' ').split()
+        choosed = random.choice(selection)
+        return 'どうしようかなあ。。。じゃあ {} が良いと思う！'.format(choosed)
 
-    if ('かわいい' in text or '可愛い' in text) and MAIDNAME in text:
-        return random.choice(TERE_MESSAGES)
-        
-    if text.startswith('占って！'):
-        birthday = text[-4:]
-        return uranai(body.get('user_id'), birthday)
-    
-    if in_keyword(text, 'おはよう', 'おはよー'):
-        return OHAYO_MESSAGE.format(body.get('user_id'))
-        
-    if in_keyword(text, 'おやすみ'):
-        return OYASUMI_MESSAGE.format(body.get('user_id'))
+class 可愛い:
+    """
+    私、褒められると弱いんだ。嬉しくなっちゃう。お屋敷の秘密教えちゃうかも！
+    """
+    def 呼び出し(self, text, body):
+        return ('かわいい' in text or '可愛い' in text) and MAIDNAME in text
 
-    if in_keyword(text, '帰', 'ただいま', 'きたく', 'かえる'):
-        return OKAERI_MESSAGE.format(body.get('user_id'))
+    def やったよ(self, text, body):
+        response = random.choice([
+            "ありがとう！ (〃'∇'〃)ゝｴﾍﾍ",
+            "そんなことないよ！（*´▽｀*）"
+        ])
+        if random.randint(1, 10) > 7:
+            # 30%の確率でメイドちゃんが機能を教えてくれる
+            response += '\n' + textwrap.dedent(random.choice(雑談お仕事リスト + 全体お仕事リスト).__doc__)
+        return response
 
-    if in_keyword(text, '疲', 'つかれ', '終', 'おわた', 'おわった'):
-        return OTSUKARE_MESSAGE.format(body.get('user_id'))
-        
-    if in_keyword(text, '行ってきます', 'いってきます', '出かけ', '行きます', 'いきます', '出発'):
-        return ITERA_MESSAGE.format(body.get('user_id'))
-    
-    if 'XXX' == text:
-        # 例外テスト
-        print(10/0)
-
-    
-def uranai(user_id, birthday):
-    # The uranai() function is:
-    #
-    #    Copyright (c) 2016 beproud
-    #    https://github.com/beproud/beproudbot
-    today = datetime.date.today().strftime('%Y/%m/%d')
-    response = urllib.request.urlopen('http://api.jugemkey.jp/api/horoscope/free/{}'.format(today))
-    data = json.loads(response.read().decode('utf8'))
-    month, day = int(birthday[:2]), int(birthday[2:])
-    period = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 23]
-    n = (month + 8 + (day >= period[(month - 1) % 12])) % 12
-    d = data['horoscope'][today][n]
-    for s in ['total', 'love', 'money', 'job']:
-        d[s] = star(d[s])
-    return """\
+class 占って:
+    """
+    雑談カフェでご主人様、お嬢様の今日の運勢を占ってあげるよ！ `占って！` のあとに数字4桁で誕生日を書いてね！例えば `占って！0101` みたいに言ってね！
+    """
+    def uranai(self, user_id, birthday):
+        # The uranai() function is:
+        #
+        #    Copyright (c) 2016 beproud
+        #    https://github.com/beproud/beproudbot
+        today = datetime.date.today().strftime('%Y/%m/%d')
+        response = urllib.request.urlopen('http://api.jugemkey.jp/api/horoscope/free/{}'.format(today))
+        data = json.loads(response.read().decode('utf8'))
+        month, day = int(birthday[:2]), int(birthday[2:])
+        period = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 23]
+        n = (month + 8 + (day >= period[(month - 1) % 12])) % 12
+        d = data['horoscope'][today][n]
+        for s in ['total', 'love', 'money', 'job']:
+            d[s] = self.star(d[s])
+        return """\
 <@{}> 様の今日の運勢はこちらです！
 {rank}位 {sign}
 総合: {total}
@@ -143,30 +145,162 @@ def uranai(user_id, birthday):
 ラッキーアイテム: {item}
 {content}""".format(user_id, **d)
 
+    def star(self, n):
+        # The star() function is:
+        #
+        #    Copyright (c) 2016 beproud
+        #    https://github.com/beproud/beproudbot
+        return '★' * n + '☆' * (5 - n)
 
-def star(n):
-    # The star() function is:
-    #
-    #    Copyright (c) 2016 beproud
-    #    https://github.com/beproud/beproudbot
-    return '★' * n + '☆' * (5 - n)
+    def 呼び出し(self, text, body):
+        return text.startswith('占って！')
 
+    def やったよ(self, text, body):
+        birthday = text[-4:]
+        return self.uranai(body.get('user_id'), birthday)
 
-def all_main(body):
-    text = body['text']
+class おはよう:
+    """
+    朝起きたら雑談カフェで一言言ってね！おはようのご挨拶をするよ！
+    """
+    def 呼び出し(self, text, body):
+        return in_keyword(text, 'おはよう', 'おはよー')
+
+    def やったよ(self, text, body):
+        return OHAYO_MESSAGE.format(body.get('user_id'))
+
+class おやすみ:
+    """
+    ご就寝前に雑談カフェで一言言ってね！お休みのご挨拶をするよ！
+    """
+    def 呼び出し(self, text, body):
+        return in_keyword(text, 'おやすみ', 'お休み', '寝')
+
+    def やったよ(self, text, body):
+        return OYASUMI_MESSAGE.format(body.get('user_id'))
+
+class おかえり:
+    """
+    帰ったら雑談カフェで言ってね！ご帰宅のご主人様、お嬢様をお出迎えするよ。
+    """
+    def 呼び出し(self, text, body):
+        return in_keyword(text, '帰', 'ただいま', 'きたく', 'かえる')
+
+    def やったよ(self, text, body):
+        return OKAERI_MESSAGE.format(body.get('user_id'))
+
+class お疲れ様:
+    """
+    疲れたら雑談カフェで言ってね！おつかれのご主人様、お嬢様をねぎらってあげるよ。
+    """
+    def 呼び出し(self, text, body):
+        return in_keyword(text, '疲', 'つかれ', '終', 'おわた', 'おわった')
+
+    def やったよ(self, text, body):
+        return OTSUKARE_MESSAGE.format(body.get('user_id'))
+
+class 行ってらっしゃい:
+    """
+    お出かけするときは `行ってきます` `いってきます` `出発` って雑談カフェで言ってね！
+    ご主人様、お嬢様をお見送りするよ！
+    """
+    def 呼び出し(self, text, body):
+        return in_keyword(text, '行ってきます', 'いってきます', '出かけ', '行きます', 'いきます', '出発')
+
+    def やったよ(self, text, body):
+        return ITERA_MESSAGE.format(body.get('user_id'))
     
-    if text.startswith('メイドちゃん！') and text.endswith('を褒めて！'):
-        return plusplus(
-            text[len('メイドちゃん！'):-len('を褒めて') - 1],
+
+雑談お仕事リスト = (
+    どれがいいかな(),
+    可愛い(),
+    占って(),
+    おはよう(),
+    おやすみ(),
+    おかえり(),
+    お疲れ様(),
+    行ってらっしゃい()
+)
+
+def 雑談カフェのお仕事(body):
+    """
+    雑談カフェチャネルでのメイドちゃんのお仕事だよ！
+    """
+    text = body['text']
+
+    for お仕事 in 雑談お仕事リスト:
+        if お仕事.呼び出し(text, body):
+            return お仕事.やったよ(text, body)
+
+    if 'XXX' == text:
+        # 例外テスト
+        print(10/0)
+
+class 褒めて:
+    """
+    `メイドちゃん！` で始まって `褒めて！` で終わるように話しかけると、メイドちゃんが褒めてあげるよ！
+    間に @ メンションがあるとその人を褒めてあげるよ！
+    誰もメンションがなければあなたを褒めるよ！でも `僕を` `私を` `俺を` 褒めてって言ってくれると嬉しいな。
+    理由も書いてね☆
+    私、どのチャネルにでも駆けつけるよ！
+    """
+    def 呼び出し(self, text, body):
+        return text.startswith('メイドちゃん！') and text.endswith('褒めて！')
+
+    def やったよ(self, text, body):
+        return self.plusplus(
+            text[len('メイドちゃん！'):-len('褒めて') - 1],
             body.get('user_id')
         )
+
+    def plusplus(self, text, user_id):
+        who = ''
+        for m in re.finditer('<(.+?)>', text):
+            who += f'<{m.group(1)}>さん、'
+        if text.endswith('僕を') or text.endswith('私を') or text.endswith('俺を'):
+            who = f'<@{user_id}>さん、'
+            text = text[0:-2]
+        if not who:
+            who = f'<@{user_id}>さん、'
+        riyu = text
+        for m in reversed(list(re.finditer('<(.+?)>', text))):
+            riyu = riyu[0:m.start()] + riyu[m.end():]
         
-def plusplus(text, user_id):
-    who = ''
-    for m in re.finditer('<(.+?)>', text):
-        who += f'<{m.group(1)}>さん、'
-    riyu = text
-    for m in reversed(list(re.finditer('<(.+?)>', text))):
-        riyu = riyu[0:m.start()] + riyu[m.end():]
+        if riyu.endswith('を'):
+            riyu = riyu[0:-1]
+        
+        return who + riyu + 'すごーい！'
+
+全体お仕事リスト = (
+    褒めて(), 
+)
+
+def 全体のお仕事(body):
+    """
+    すべてのチャネルでのメイドちゃんのお仕事だよ！
+
+    >>> body = {'user_id': '00000000'}
+
+    >>> body['text'] = 'メイドちゃん！早く帰った僕を褒めて！'
+    >>> 全体のお仕事(body)
+    '<00000000>さん、早く帰ったすごーい！'
+
+    >>> body['text'] = 'メイドちゃん！仕事頑張った<00000001> <00000002>を褒めて！'
+    >>> 全体のお仕事(body)
+    '<00000001>さん、<00000002>さん、仕事頑張った すごーい！'
+    """
+    text = body['text']
     
-    return who + riyu + 'すごーい！'
+    for お仕事 in 全体お仕事リスト:
+        if お仕事.呼び出し(text, body):
+            return お仕事.やったよ(text, body)
+
+if __name__ == '__main__':
+    MAIDNAME = 'メイドちゃん'
+    from sys import argv
+    body = {
+        'user_id': '00000000',
+        'text': argv[1]
+    }
+    print(全体のお仕事(body) or 雑談カフェのお仕事(body))
+        

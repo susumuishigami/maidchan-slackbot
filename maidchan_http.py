@@ -4,9 +4,11 @@ import random
 import urllib
 import traceback
 import os
+import re
 
 
-TOKEN = os.environ['TOKEN']
+ZATSUDAN_TOKEN = os.environ['ZATSUDAN_TOKEN']
+ALL_TOKEN = os.environ['ALL_TOKEN']
 MAIDNAME = os.environ['MAIDNAME']
 
 
@@ -27,15 +29,23 @@ def http_handler(event, contect):
             return None  # 無限ループ対策
         if body.get('text') is None:
             return None
-        if body.get('token') in TOKEN.split():
-            return None
+        if body.get('token') in ZATSUDAN_TOKEN.split(','):
+            print('zatsudan token recieved:', body)
+            result = zatsudan_main(body)
+            if result:
+                return message(result)
+            else:
+                respond(400, {'message': 'unsupported message'})
+                
+        if body.get('token') in ALL_TOKEN.split(','):
+            print('all_message recieved:', body)
+            result = all_main(body)
+            if result:
+                return message(result)
+            else:
+                respond(400, {'message': 'unsupported message'})
 
-        print('http recieved:', body)
-        result = main(body)
-        if result:
-            return message(result)
-        else:
-            respond(400, {'message': 'unsupported message'})
+        
 
     except Exception as e:
         print(traceback.format_exc())
@@ -63,9 +73,16 @@ def message(text):
         "username": MAIDNAME,
         "icon_emoji": ":maidchan:"
     })
+    
+
+def in_keyword(text, *keyword):
+    for k in keyword:
+        if k in text:
+            return True
+    return False
 
 
-def main(body):
+def zatsudan_main(body):
     text = body['text']
     
     for suffix in ('どれがいいかな', 'どっちがいいかな', 'どれがいいかな？', 'どっちがいいかな？'):
@@ -77,7 +94,7 @@ def main(body):
     if ('かわいい' in text or '可愛い' in text) and MAIDNAME in text:
         return random.choice(TERE_MESSAGES)
         
-    if text.startswith('占って！！'):
+    if text.startswith('占って！'):
         birthday = text[-4:]
         return uranai(body.get('user_id'), birthday)
     
@@ -99,12 +116,6 @@ def main(body):
     if 'XXX' == text:
         # 例外テスト
         print(10/0)
-
-def in_keyword(text, *keyword):
-    for k in keyword:
-        if k in text:
-            return True
-    return False
 
     
 def uranai(user_id, birthday):
@@ -139,3 +150,23 @@ def star(n):
     #    Copyright (c) 2016 beproud
     #    https://github.com/beproud/beproudbot
     return '★' * n + '☆' * (5 - n)
+
+
+def all_main(body):
+    text = body['text']
+    
+    if text.startswith('メイドちゃん！') and text.endswith('を褒めて！'):
+        return plusplus(
+            text[len('メイドちゃん！'):-len('を褒めて') - 1],
+            body.get('user_id')
+        )
+        
+def plusplus(text, user_id):
+    who = ''
+    for m in re.finditer('<(.+?)>', text):
+        who += f'<{m.group(1)}>さん、'
+    riyu = text
+    for m in reversed(list(re.finditer('<(.+?)>', text))):
+        riyu = riyu[0:m.start()] + riyu[m.end():]
+    
+    return who + riyu + 'すごーい！'

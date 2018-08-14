@@ -23,7 +23,7 @@ def scheduled_handler(event, context):
     hour = now.hour
     
     if hour == 8:
-        message(OHAYO_MESSAGE.format(hour, get_weather()))
+        message(OHAYO_MESSAGE.format(get_weather()))
 
     if hour == 12:
         message(OHIRU_MESSAGE.format(hour))

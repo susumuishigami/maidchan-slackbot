@@ -128,10 +128,7 @@ class 占って:
         today = datetime.date.today().strftime('%Y/%m/%d')
         response = urllib.request.urlopen('http://api.jugemkey.jp/api/horoscope/free/{}'.format(today))
         data = json.loads(response.read().decode('utf8'))
-        month, day = int(birthday[:2]), int(birthday[2:])
-        period = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 23]
-        n = (month + 8 + (day >= period[(month - 1) % 12])) % 12
-        d = data['horoscope'][today][n]
+        d = data['horoscope'][today][self._calc_index(birthday)]
         for s in ['total', 'love', 'money', 'job']:
             d[s] = self.star(d[s])
         return """\
@@ -144,6 +141,30 @@ class 占って:
 ラッキーカラー: {color}
 ラッキーアイテム: {item}
 {content}""".format(user_id, **d)
+
+    @staticmethod
+    def _calc_index(birthday):
+        if not birthday.endswith("座"):
+            month, day = int(birthday[:2]), int(birthday[2:])
+            period = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 23]
+            return (month + 8 + (day >= period[(month - 1) % 12])) % 12
+        # おひつじ てんびん みずがめ are shorten because len(birthday) == 4
+        n = {"ひつじ":0, "おうし":1, "ふたご":2, "おとめ":5,
+             "んびん":6, "さそり":7, "ずがめ":10,
+        }.get(birthday[-4:-1])
+        if isinstance(n, int):
+            return n
+        n = {"牡羊":0, "牡牛":1, "双子":2, "かに":3, "しし":4, "獅子":4, "乙女":5,
+             "天秤":6, "いて":8, "射手":8, "やぎ":9, "山羊":9, "水瓶":10, "うお":11,
+        }.get(birthday[-3:-1])
+        if isinstance(n, int):
+            return n
+        n = {"蟹":3, "蠍":7, "魚":11,
+        }.get(birthday[-2:-1])
+        if isinstance(n, int):
+            return n
+        # ValueError pretend
+        month, day = int(birthday[:2]), int(birthday[2:])
 
     def star(self, n):
         # The star() function is:

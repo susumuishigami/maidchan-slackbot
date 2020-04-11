@@ -142,13 +142,35 @@ class 占って:
         今日 = datetime.date.today().strftime('%Y/%m/%d')
         response = urllib.request.urlopen('http://api.jugemkey.jp/api/horoscope/free/{}'.format(今日))
         data = json.loads(response.read().decode('utf8'))
-        月, 日 = int(birthday[:2]), int(birthday[2:])
-        区切り = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 23]
-        星座 = (月 + 8 + (日 >= 区切り[(月 - 1) % 12])) % 12
-        d = data['horoscope'][今日][星座]
+        d = data['horoscope'][今日][self._calc_index(birthday)]
         for s in ['total', 'love', 'money', 'job']:
             d[s] = self.お星様きらり(d[s])
         return 本日の運勢.format(user_id, **d)
+
+    @staticmethod
+    def _calc_index(birthday):
+        if birthday.endswith("座"):
+          # 星座入力の場合
+          # おひつじ てんびん みずがめ are shorten because len(birthday) == 4
+          星座 = {"ひつじ":0, "おうし":1, "ふたご":2, "おとめ":5,
+               "んびん":6, "さそり":7, "ずがめ":10,
+          }.get(birthday[-4:-1])
+          if isinstance(星座, int):
+              return 星座
+          星座 = {"牡羊":0, "牡牛":1, "双子":2, "かに":3, "しし":4, "獅子":4, "乙女":5,
+               "天秤":6, "いて":8, "射手":8, "やぎ":9, "山羊":9, "水瓶":10, "うお":11,
+          }.get(birthday[-3:-1])
+          if isinstance(星座, int):
+              return 星座
+          星座 = {"蟹":3, "蠍":7, "魚":11,
+          }.get(birthday[-2:-1])
+          if isinstance(星座, int):
+              return 星座
+        # 誕生日入力の場合
+        月, 日 = int(birthday[:2]), int(birthday[2:])
+        区切り = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 23]
+        星座 = (月 + 8 + (日 >= 区切り[(月 - 1) % 12])) % 12
+        return 星座
 
     def お星様きらり(self, n):
         # The お星様きらり:star() function is:

@@ -53,7 +53,7 @@ def message(text):
 def get_weather():
     try:
         # APIキーが必要ないlivedoorのAPIを使用する
-        response = urllib.request.urlopen("http://weather.livedoor.com/forecast/webservice/json/v1?city=130010")  # 東京の天気を取得する
+        response = urllib.request.urlopen("https://weather.tsukumijima.net/api/forecast?city=130010")  # 東京の天気を取得する
         data = json.loads(response.read().decode('utf8'))
         telop = 'わかりません'
         temperature = 'わかりません'

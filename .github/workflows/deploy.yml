@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v1
         with:
           python-version: 3.9
-      - run: |-
+      - run: |
           cd functions
           zip -r ../package.zip *
           cd ..
@@ -25,7 +25,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
-      - run: |-
-          curl -X POST --data-urlencode \
-          "payload={\"channel\": \"#雑談カフェ\", \"username\": \"メイドちゃん\", \"text\": \"メイドちゃんのレベルが上がったよ！(^o^)\", \"icon_emoji\": \":maidchan:\"}"\
-          https://hooks.slack.com/services/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
+      - run: >
+          curl -X POST --data-urlencode
+          "payload={\"text\": \"メイドちゃんのレベルが上がったよ！(^o^)\"}"
+          ${{ secrets.INCOMING_WEBHOOK_URL }}

@@ -34,7 +34,7 @@ import re
     "ありがとう！ (〃'∇'〃)ゝｴﾍﾍ",
     "そんなことないよ！（*´▽｀*）"
 ]
-褒めるときのセリフ = '{誰}{理由}んだ！すごーい！'
+褒めるときのセリフ = '{誰}、{理由}んだ！すごーい！'
 褒めるときのセリフ理由なし版 = '{誰}！すごーい！'
 
 
@@ -299,12 +299,12 @@ class 褒めて:
     def 褒める(self, text, user_id):
         誰 = ''
         for m in re.finditer('<(.+?)>', text):
-            誰 += f'<{m.group(1)}>さん、'
+            誰 += f'<{m.group(1)}>さん'
         if text.endswith('僕を') or text.endswith('私を') or text.endswith('俺を'):
-            誰 = f'<@{user_id}>さん、'
+            誰 = f'<@{user_id}>さん'
             text = text[0:-2]
         if not 誰:
-            誰 = f'<@{user_id}>さん、'
+            誰 = f'<@{user_id}>さん'
         理由 = text
         for m in reversed(list(re.finditer('<(.+?)>', text))):
             理由 = 理由[0:m.start()] + 理由[m.end():]

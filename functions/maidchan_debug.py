@@ -4,8 +4,7 @@ from maidchan.tasks import お屋敷のお仕事をする, 雑談カフェのお
 
 
 def scheduled_task(user_input):
-    """数字だけ入力された時はスケジュールされたイベントを実行する
-    """
+    """数字だけ入力された時はスケジュールされたイベントを実行する"""
     try:
         hour = int(user_input)
     except TypeError:

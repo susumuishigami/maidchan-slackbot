@@ -39,14 +39,13 @@ RequestBody = Dict[str, str]
 
 
 def 雑談カフェのお仕事をする(body: RequestBody) -> Optional[str]:
-    """雑談カフェチャネルでのメイドちゃんのお仕事だよ！
-    """
+    """雑談カフェチャネルでのメイドちゃんのお仕事だよ！"""
 
     text = body["text"]
 
-    for お仕事 in 雑談お仕事リスト:
-        if お仕事.呼び出し(text, body):
-            return お仕事.やったよ(text, body)
+    for work in 雑談お仕事リスト:
+        if work.呼び出し(text, body):
+            return work.やったよ(text, body)
 
     if "XXX" == text:  # pragma:nocover
         # 例外テスト
@@ -56,36 +55,35 @@ def 雑談カフェのお仕事をする(body: RequestBody) -> Optional[str]:
 
 
 def お屋敷のお仕事をする(body: RequestBody) -> Optional[str]:
-    """すべてのチャネルでのメイドちゃんのお仕事だよ！
-    """
+    """すべてのチャネルでのメイドちゃんのお仕事だよ！"""
 
     text = body["text"]
 
-    for お仕事 in お屋敷お仕事リスト:
-        if お仕事.呼び出し(text, body):
-            return お仕事.やったよ(text, body)
+    for work in お屋敷お仕事リスト:
+        if work.呼び出し(text, body):
+            return work.やったよ(text, body)
 
     return None
 
 
-def 雑談カフェのお仕事(cls):
+def zatsudan_work(cls):
     雑談お仕事リスト.append(cls())
     return cls
 
 
-def お屋敷のお仕事(cls):
+def oyashiki_work(cls):
     お屋敷お仕事リスト.append(cls())
     return cls
 
 
-def 合言葉を探す(text: str, *keyword) -> bool:
+def find_keyword(text: str, *keyword) -> bool:
     for k in keyword:
         if k in text:
             return True
     return False
 
 
-@雑談カフェのお仕事
+@zatsudan_work
 class どれがいいかな:
     """メイドちゃんが選んであげるよ！
 
@@ -110,10 +108,9 @@ class どれがいいかな:
         return 選んだよのセリフ.format(選んだもの)
 
 
-@雑談カフェのお仕事
+@zatsudan_work
 class 可愛い:
-    """褒められると嬉しくなっちゃって、お屋敷の秘密教えちゃうかも！
-    """
+    """褒められると嬉しくなっちゃって、お屋敷の秘密教えちゃうかも！"""
 
     def 呼び出し(self, text, body):
         return ("かわいい" in text or "可愛い" in text) and settings.メイドちゃんの名前 in text
@@ -126,10 +123,10 @@ class 可愛い:
         return 返事
 
 
-@雑談カフェのお仕事
+@zatsudan_work
 class 占って:
     """雑談カフェでご主人様、お嬢様の今日の運勢を占ってあげるよ！
-    
+
     `占って！` のあとに数字4桁で誕生日を書いてね！例えば `占って！0101` みたいに言ってね！
     """
 
@@ -194,9 +191,9 @@ class 占って:
             if isinstance(星座, int):
                 return 星座
         # 誕生日入力の場合
-        月, 日 = int(birthday[:2]), int(birthday[2:])
+        month, day = int(birthday[:2]), int(birthday[2:])
         区切り = [20, 19, 21, 20, 21, 22, 23, 23, 23, 24, 22, 23]
-        星座 = (月 + 8 + (日 >= 区切り[(月 - 1) % 12])) % 12
+        星座 = (month + 8 + (day >= 区切り[(month - 1) % 12])) % 12
         return 星座
 
     def お星様きらり(self, n):
@@ -214,7 +211,7 @@ class 占って:
         return self.占い(body.get("user_id"), birthday)
 
 
-@雑談カフェのお仕事
+@zatsudan_work
 class おはよう:
     """おはようのご挨拶をするよ！
 
@@ -222,13 +219,13 @@ class おはよう:
     """
 
     def 呼び出し(self, text, body):
-        return 合言葉を探す(text, "おはよう", "おはよー")
+        return find_keyword(text, "おはよう", "おはよー")
 
     def やったよ(self, text, body):
         return 朝のご挨拶.format(body.get("user_id"))
 
 
-@雑談カフェのお仕事
+@zatsudan_work
 class おやすみ:
     """おやすみのご挨拶をするよ！
 
@@ -236,13 +233,13 @@ class おやすみ:
     """
 
     def 呼び出し(self, text, body):
-        return 合言葉を探す(text, "おやすみ", "お休み", "寝")
+        return find_keyword(text, "おやすみ", "お休み", "寝")
 
     def やったよ(self, text, body):
         return おやすみのご挨拶.format(body.get("user_id"))
 
 
-@雑談カフェのお仕事
+@zatsudan_work
 class おかえり:
     """ご帰宅のご主人様、お嬢様をお出迎えするよ。
 
@@ -250,13 +247,13 @@ class おかえり:
     """
 
     def 呼び出し(self, text, body):
-        return 合言葉を探す(text, "帰", "ただいま", "きたく", "かえる")
+        return find_keyword(text, "帰", "ただいま", "きたく", "かえる")
 
     def やったよ(self, text, body):
         return おかえりのご挨拶.format(body.get("user_id"))
 
 
-@雑談カフェのお仕事
+@zatsudan_work
 class 円周率言って:
     """メイドちゃんは円周率を言うのが得意だよ！
 
@@ -274,7 +271,7 @@ class 円周率言って:
         return "3.1415926535897932384626433832795028841971693993"
 
 
-@雑談カフェのお仕事
+@zatsudan_work
 class お疲れ様:
     """おつかれのご主人様、お嬢様をねぎらってあげるよ。
 
@@ -282,13 +279,13 @@ class お疲れ様:
     """
 
     def 呼び出し(self, text, body):
-        return 合言葉を探す(text, "疲", "つかれ", "終", "おわた", "おわった")
+        return find_keyword(text, "疲", "つかれ", "終", "おわた", "おわった")
 
     def やったよ(self, text, body):
         return お疲れ様のセリフ.format(body.get("user_id"))
 
 
-@雑談カフェのお仕事
+@zatsudan_work
 class 行ってらっしゃい:
     """ご主人様、お嬢様をお見送りするよ！
 
@@ -296,13 +293,13 @@ class 行ってらっしゃい:
     """
 
     def 呼び出し(self, text, body):
-        return 合言葉を探す(text, "行ってきます", "いってきます", "出かけ", "行きます", "いきます", "出発")
+        return find_keyword(text, "行ってきます", "いってきます", "出かけ", "行きます", "いきます", "出発")
 
     def やったよ(self, text, body):
         return いってらっしゃいのご挨拶.format(body.get("user_id"))
 
 
-@お屋敷のお仕事
+@oyashiki_work
 class 褒めて:
     """頑張ってる人をメイドちゃんが褒めてあげるよ！
 
@@ -347,7 +344,7 @@ class 褒めて:
             return 褒めるときのセリフ理由なし版.format(誰=誰)
 
 
-@お屋敷のお仕事
+@oyashiki_work
 class 天気予報:
     """メイドちゃんが天気予報をするよ！
 
@@ -370,8 +367,7 @@ class 天気予報:
         return data
 
     def get_weather(self, city, forecasts_index):
-        """天気予報APIを呼び出して結果を読み込む
-        """
+        """天気予報APIを呼び出して結果を読み込む"""
 
         try:
             data = self._call_weather_api(city)

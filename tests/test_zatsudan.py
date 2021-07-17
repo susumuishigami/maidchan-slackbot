@@ -28,8 +28,7 @@ def target():
     ],
 )
 def test_text_response(target, text, expected):
-    """テキストに対するレスポンスが仕様通りであること
-    """
+    """テキストに対するレスポンスが仕様通りであること"""
     actual = target({"user_id": "00000000", "text": text})
     assert actual == expected
 

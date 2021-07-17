@@ -18,8 +18,7 @@ def http_handler(event, context) -> Optional[ResponseBody]:
 
 
 def maidchan_handle_message(body: ParsedBody) -> Optional[ResponseBody]:
-    """メッセージ本文を元にメイドちゃんを制御する
-    """
+    """メッセージ本文を元にメイドちゃんを制御する"""
     try:
         if is_bot_message(body):
             return None  # 無限ループ対策
@@ -46,38 +45,32 @@ def maidchan_handle_message(body: ParsedBody) -> Optional[ResponseBody]:
 
 
 def parse_body(event) -> ParsedBody:
-    """メッセージ本文を解釈する
-    """
+    """メッセージ本文を解釈する"""
     return {k: v for k, v in urllib.parse.parse_qsl(event["body"])}
 
 
 def is_bot_message(body: ParsedBody) -> bool:
-    """botからのメッセージか？
-    """
+    """botからのメッセージか？"""
     return body.get("user_id") == "USLACKBOT"
 
 
 def is_empty_message(body: ParsedBody) -> bool:
-    """空のメッセージか？
-    """
+    """空のメッセージか？"""
     return body.get("text") is None
 
 
 def is_zatsudan_cafe_message(body: ParsedBody) -> bool:
-    """雑談カフェに送信されたメッセージか？
-    """
+    """雑談カフェに送信されたメッセージか？"""
     return body.get("token") in settings.雑談カフェのトークン
 
 
 def is_oyashiki_message(body: ParsedBody) -> bool:
-    """お屋敷に送信されたメッセージか？
-    """
+    """お屋敷に送信されたメッセージか？"""
     return body.get("token") in settings.お屋敷のトークン
 
 
 def respond(status: int, res: ResponseBody) -> ResponseBody:
-    """Slackに返却するオブジェクトに変換する
-    """
+    """Slackに返却するオブジェクトに変換する"""
     print("respond:", res)
     return {
         "statusCode": status,

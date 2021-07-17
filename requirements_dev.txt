@@ -1,7 +1,10 @@
 -r requirements.txt
 pytest
+pytest-cov
 pytest-pythonpath
 black
 isort
 mypy
 flake8
+freezegun
+types-freezegun

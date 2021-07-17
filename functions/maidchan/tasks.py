@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import random
 import re
 import textwrap
@@ -8,6 +9,8 @@ import urllib.request
 from typing import Dict, List, Optional, Type
 
 from . import settings
+
+logger = logging.getLogger(__name__)
 
 RequestBody = Dict[str, str]
 
@@ -45,7 +48,7 @@ def 雑談カフェのお仕事をする(body: RequestBody) -> Optional[str]:
         if お仕事.呼び出し(text, body):
             return お仕事.やったよ(text, body)
 
-    if "XXX" == text:
+    if "XXX" == text:  # pragma:nocover
         # 例外テスト
         print(10 / 0)
 
@@ -119,7 +122,7 @@ class どれがいいかな:
 @雑談カフェのお仕事
 class 可愛い:
     """
-    私、褒められると弱いんだ。嬉しくなっちゃう。お屋敷の秘密教えちゃうかも！
+    褒められると嬉しくなっちゃって、お屋敷の秘密教えちゃうかも！
     """
 
     def 呼び出し(self, text, body):
@@ -139,16 +142,20 @@ class 占って:
     雑談カフェでご主人様、お嬢様の今日の運勢を占ってあげるよ！ `占って！` のあとに数字4桁で誕生日を書いてね！例えば `占って！0101` みたいに言ってね！
     """
 
+    def _call_uranai_api(self, today):  # pragma: nocover
+        response = urllib.request.urlopen(
+            "http://api.jugemkey.jp/api/horoscope/free/{}".format(today)
+        )
+        return json.loads(response.read().decode("utf8"))
+
     def 占い(self, user_id, birthday):
         # The 占い() function is:
         #
         #    Copyright (c) 2016 beproud
         #    https://github.com/beproud/beproudbot
-        今日 = datetime.date.today().strftime("%Y/%m/%d")
-        response = urllib.request.urlopen(
-            "http://api.jugemkey.jp/api/horoscope/free/{}".format(今日)
-        )
-        data = json.loads(response.read().decode("utf8"))
+        JST = datetime.timezone(datetime.timedelta(hours=+9), "JST")
+        今日 = datetime.datetime.now(tz=JST).strftime("%Y/%m/%d")
+        data = self._call_uranai_api(今日)
         d = data["horoscope"][今日][self._calc_index(birthday)]
         for s in ["total", "love", "money", "job"]:
             d[s] = self.お星様きらり(d[s])
@@ -269,7 +276,7 @@ class 円周率言って:
         return False
 
     def やったよ(self, text, body):
-        return "3.1415926535897932384626433832795018841971693993"
+        return "3.1415926535897932384626433832795028841971693993"
 
 
 @雑談カフェのお仕事
@@ -332,7 +339,7 @@ class 褒めて:
             理由 = 理由[0:-1]
 
         if 理由.endswith("の"):
-            理由 = 理由[0:-1]
+            理由 = 理由[0:-1] + "な"
 
         誰 = 誰.strip()
         理由 = 理由.strip()
@@ -356,13 +363,18 @@ class 天気予報:
 
     """
 
+    def _call_weather_api(self, city):  # pragma: nocover
+        response = urllib.request.urlopen(
+            # APIキーが必要ないlivedoor互換のAPIを使用する
+            # thanks weather.tsukumijima.net
+            f"https://weather.tsukumijima.net/api/forecast?city={city}"
+        )
+        data = json.loads(response.read().decode("utf8"))
+        return data
+
     def get_weather(self, city, forecasts_index):
         try:
-            # APIキーが必要ないlivedoorのAPIを使用する
-            response = urllib.request.urlopen(
-                f"https://weather.tsukumijima.net/api/forecast?city={city}"
-            )  # 東京の天気を取得する
-            data = json.loads(response.read().decode("utf8"))
+            data = self._call_weather_api(city)
             dateLabel = "いつか分からない日"
             location = "どこか分からない場所"
             telop = "わかりません"
@@ -376,6 +388,7 @@ class 天気予報:
                     + "度"
                 )
             except Exception:
+                logger.exception("Exception when getting weather")
                 pass
             message = "{}の{}の天気は *{}* 、最高気温は {} です！".format(
                 dateLabel, location, telop, temperature
@@ -385,9 +398,9 @@ class 天気予報:
             if "雨" in telop or "雪" in telop:
                 message += " *傘を忘れないで!!* "
             return message
-        except Exception as e:
-            print(e)
-            return "分かりません(;_;)"
+        except Exception:
+            logger.exception("Exception when getting weather")
+            return "今日の天気は分かりません(;_;)"
 
     def 呼び出し(self, text, body):
         return text.startswith("メイドちゃん！") and text.endswith("天気を教えて！")
@@ -405,23 +418,24 @@ class 天気予報:
             forecasts_index = 1
 
         # 指定したら今日・明日・明後日の天気
-        if "今日" in text:
-            forecasts_index = 0
-        if "明日" in text:
-            forecasts_index = 1
-        if "明後日" in text:
-            forecasts_index = 2
+        for date_label, date_forecasts_index in [
+            ("今日", 0),
+            ("明日", 1),
+            ("明後日", 2),
+        ]:
+            if date_label in text:
+                forecasts_index = date_forecasts_index
 
-        city = 130010  # 東京
-        if "大阪" in text:
-            city = "270000"
-        if "名古屋" in text:
-            city = "230010"
-        if "福岡" in text:
-            city = "400010"
-        if "仙台" in text:
-            city = "040010"
-        if "札幌" in text:
-            city = "016010"
+        # メイドちゃんの知ってる都市
+        city = "130010"  # 東京
+        for city_name, city_id in [
+            ("大阪", "270000"),
+            ("名古屋", "230010"),
+            ("福岡", "400010"),
+            ("仙台", "040010"),
+            ("札幌", "016010"),
+        ]:
+            if city_name in text:
+                city = city_id
 
         return self.get_weather(city, forecasts_index)

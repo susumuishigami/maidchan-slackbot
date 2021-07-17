@@ -2,7 +2,9 @@ appdirs==1.4.4
 attrs==21.2.0
 black==21.7b0
 click==8.0.1
+coverage==5.5
 flake8==3.9.2
+freezegun==1.1.0
 iniconfig==1.1.1
 isort==5.9.2
 mccabe==0.6.1
@@ -16,8 +18,13 @@ pycodestyle==2.7.0
 pyflakes==2.3.1
 pyparsing==2.4.7
 pytest==6.2.4
+pytest-cov==2.12.1
 pytest-pythonpath==0.7.3
+python-dateutil==2.8.2
 regex==2021.7.6
+six==1.16.0
 toml==0.10.2
 tomli==1.0.4
+types-freezegun==0.1.4
 typing-extensions==3.10.0.0
+urllib3==1.26.6

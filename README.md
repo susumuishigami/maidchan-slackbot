@@ -41,6 +41,6 @@ $ make lint
 
 # deploy
 
-- push/merge main branch, and deploy
+- push/merge master branch, and deploy
 
 that's it!

@@ -2,8 +2,8 @@ name: deploy
 
 on:
   push:
-    branches: # main に直接pushしたとき
-      - main
+    branches: # master に直接pushしたとき
+      - master
   pull_request: # PullRequest作成、同期時に実行させる
     types:
       - opened

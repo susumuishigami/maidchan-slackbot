@@ -6,6 +6,8 @@ fmt:
 	isort functions tests
 
 lint:
+	black --check functions tests
+	isort --check-only functions tests
 	flake8 functions tests
 	mypy functions tests
 

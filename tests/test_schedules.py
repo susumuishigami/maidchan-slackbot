@@ -36,6 +36,10 @@ OYASUMI_MESSAGE = "ご主人様、お嬢様！只今 {} 時をお知らせしま
     ],
 )
 def test_schedule(target, hour, expected):
+    """時刻に対するメイドちゃんのメッセージが仕様通りの内容であること
+
+    天気予報については、APIがエラーを返す場合のケースでテストをする
+    """
     with mock.patch("maidchan.tasks.天気予報._call_weather_api") as mock_call_weather_api:
         mock_call_weather_api.side_effect = Exception
         actual = target(hour)

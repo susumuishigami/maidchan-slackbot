@@ -23,6 +23,8 @@ def target():
     ],
 )
 def test_text_response(target, text, expected):
+    """テキストに対するレスポンスが仕様通りであること
+    """
     actual = target({"user_id": "00000000", "text": text})
     assert actual == expected
 
@@ -36,6 +38,8 @@ def test_text_response(target, text, expected):
     ],
 )
 def test_weather_by_date_label(target, text, expected):
+    """天気予報機能で今日、明日、明後日の指定が正しくできること
+    """
     with mock.patch("maidchan.tasks.天気予報._call_weather_api") as mock_call_weather_api:
         mock_call_weather_api.return_value = {
             "forecasts": {
@@ -71,6 +75,8 @@ def test_weather_by_date_label(target, text, expected):
     ],
 )
 def test_weather_by_current_time(target, time, expected):
+    """天気予報機能で現在時刻に応じて、今日か明日のとりわけが正しくできること
+    """
     with freezegun.freeze_time("2021-07-18 " + time) as _, mock.patch(
         "maidchan.tasks.天気予報._call_weather_api"
     ) as mock_call_weather_api:
@@ -94,6 +100,8 @@ def test_weather_by_current_time(target, time, expected):
 
 
 def test_weather_responded_error(target):
+    """天気予報機能でAPIエラーの時の挙動が仕様通りであること
+    """
     with mock.patch("maidchan.tasks.天気予報._call_weather_api") as mock_call_weather_api:
         mock_call_weather_api.side_effect = Exception
         actual = target({"user_id": "00000000", "text": "メイドちゃん！天気を教えて！"})
@@ -101,6 +109,8 @@ def test_weather_responded_error(target):
 
 
 def test_weather_by_unknown_response(target):
+    """天気予報機能でAPIのレスポンスが想定外の形式の時のメッセージが仕様通りであること
+    """
     with mock.patch("maidchan.tasks.天気予報._call_weather_api") as mock_call_weather_api:
         mock_call_weather_api.return_value = {
             "forecasts": {
@@ -123,6 +133,8 @@ def test_weather_by_unknown_response(target):
     ],
 )
 def test_weather_by_city(target, text, city_id):
+    """天気予報機能で都市の指定が正しくできること
+    """
     with mock.patch("maidchan.tasks.天気予報._call_weather_api") as mock_call_weather_api:
         mock_call_weather_api.return_value = {
             "forecasts": {

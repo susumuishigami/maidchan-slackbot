@@ -28,11 +28,17 @@ def target():
     ],
 )
 def test_text_response(target, text, expected):
+    """テキストに対するレスポンスが仕様通りであること
+    """
     actual = target({"user_id": "00000000", "text": text})
     assert actual == expected
 
 
 def test_choice(target):
+    """選ぶ機能が仕様通りの結果を返すこと
+
+    内部で乱数を使っているのでseedを0に固定して結果を付き合わせる
+    """
     random.seed(0)
     actual = target({"user_id": "00000000", "text": "いか、たこどっちがいいかな？"})
     assert actual == "どうしようかなあ。。。じゃあ たこ が良いと思う！"
@@ -46,6 +52,11 @@ def test_choice(target):
     ],
 )
 def test_kawaii(target, random_seed, expected):
+    """メイドちゃん可愛い機能が仕様通りの結果を返すこと
+
+    内部で乱数を使っているのでseedを0に固定して結果を付き合わせる。
+    また「お屋敷の秘密」部分についてはテスト対象とせず、前方一致で確認する。
+    """
     random.seed(random_seed)
     actual = target({"user_id": "00000000", "text": "メイドちゃん！可愛い！"})
     assert actual.startswith(expected)
@@ -53,6 +64,10 @@ def test_kawaii(target, random_seed, expected):
 
 @freezegun.freeze_time("2021-07-18")
 def test_uranai(target):
+    """占い機能が仕様通りの結果を返すこと
+
+    外部APIを使っているので結果はモックのレスポンスを使用して付き合わせる
+    """
     with mock.patch("maidchan.tasks.占って._call_uranai_api") as mock_call_uranai_api:
         mock_call_uranai_api.return_value = {
             "horoscope": {

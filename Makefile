@@ -16,3 +16,6 @@ pip_dev:
 
 pip_prod:
 	pip install -r requirements.txt -c requirements.lock
+
+debug:
+	@PYTHONPATH=./functions python functions/maidchan_debug.py

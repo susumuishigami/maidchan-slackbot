@@ -341,3 +341,80 @@ class 褒めて:
             return 褒めるときのセリフ.format(誰=誰, 理由=理由)
         else:
             return 褒めるときのセリフ理由なし版.format(誰=誰)
+
+
+@お屋敷のお仕事
+class 天気予報:
+    """
+    天気を教えてあげるよ
+    """
+
+    def get_weather(self, city, forecasts_index):
+        try:
+            # APIキーが必要ないlivedoorのAPIを使用する
+            response = urllib.request.urlopen(
+                f"https://weather.tsukumijima.net/api/forecast?city={city}"
+            )  # 東京の天気を取得する
+            data = json.loads(response.read().decode("utf8"))
+            dateLabel = "いつか分からない日"
+            location = "どこか分からない場所"
+            telop = "わかりません"
+            temperature = "わかりません"
+            try:
+                dateLabel = data["forecasts"][forecasts_index]["dateLabel"]
+                location = data["location"]["district"]
+                telop = data["forecasts"][forecasts_index]["telop"]
+                temperature = (
+                    data["forecasts"][forecasts_index]["temperature"]["max"]["celsius"]
+                    + "度"
+                )
+            except Exception:
+                pass
+            message = "{}の{}の天気は *{}* 、最高気温は {} です！".format(
+                dateLabel, location, telop, temperature
+            )
+
+            # 降水確率が取れなかったのでとりあえず、天気に「雨」や「雪」が入ってたら傘を持てという
+            if "雨" in telop or "雪" in telop:
+                message += " *傘を忘れないで!!* "
+            return message
+        except Exception as e:
+            print(e)
+            return "分かりません(;_;)"
+
+    def 呼び出し(self, text, body):
+        return text.startswith("メイドちゃん！") and text.endswith("天気を教えて！")
+
+    def やったよ(self, text, body):
+
+        # 今何時かを調べる
+        JST = datetime.timezone(datetime.timedelta(hours=+9), "JST")
+        now = datetime.datetime.now(JST)
+        hour = now.hour
+
+        forecasts_index = 0
+        # 18時以降は明日の天気
+        if hour >= 18:
+            forecasts_index = 1
+
+        # 指定したら今日・明日・明後日の天気
+        if "今日" in text:
+            forecasts_index = 0
+        if "明日" in text:
+            forecasts_index = 1
+        if "明後日" in text:
+            forecasts_index = 2
+
+        city = 130010  # 東京
+        if "大阪" in text:
+            city = "270000"
+        if "名古屋" in text:
+            city = "230010"
+        if "福岡" in text:
+            city = "400010"
+        if "仙台" in text:
+            city = "040010"
+        if "札幌" in text:
+            city = "016010"
+
+        return self.get_weather(city, forecasts_index)

@@ -64,7 +64,7 @@ def get_weather():
         try:
             telop = data["forecasts"][0]["telop"]
             temperature = data["forecasts"][0]["temperature"]["max"]["celsius"] + "度"
-        except:
+        except Exception:
             pass
         message = "今日の東京地方の天気は *{}* 、最高気温は {} です！".format(telop, temperature)
 

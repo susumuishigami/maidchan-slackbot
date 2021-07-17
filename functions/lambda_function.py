@@ -1,6 +1,3 @@
-import json
-import traceback
-
 print("Loading function")
 
 

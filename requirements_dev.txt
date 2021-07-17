@@ -1,0 +1,7 @@
+-r requirements.txt
+pytest
+pytest-pythonpath
+black
+isort
+mypy
+flake8

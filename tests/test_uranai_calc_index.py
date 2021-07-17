@@ -1,5 +1,5 @@
 import pytest
-from maidchan_http import 占って
+from maidchan.tasks import 占って
 
 
 @pytest.mark.parametrize(

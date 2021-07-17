@@ -21,6 +21,10 @@ def scheduled_handler(event, context):
 
 
 def request_webhook(obj: Dict[str, Any]):
+    """Slack Webhook URL にリクエストを送信する
+
+    :param obj: 送信するオブジェクト
+    """
     logger.info("send message", obj)
     headers = {"Content-Type": "application/json"}
     json_data = json.dumps(obj).encode("utf-8")
@@ -39,4 +43,8 @@ def request_webhook(obj: Dict[str, Any]):
 
 
 def send(text):
+    """Slack にメッセージを送信する
+
+    :param text: メッセージ本文
+    """
     request_webhook({"text": text})

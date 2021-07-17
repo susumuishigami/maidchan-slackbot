@@ -21,4 +21,6 @@ from maidchan.tasks import 占って
     ],
 )
 def test_calc_index(birthday, expect):
+    """星座の名称や、4桁の誕生日表記から星座indexを評価できること
+    """
     assert 占って._calc_index(birthday[-4:]) == expect

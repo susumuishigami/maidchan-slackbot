@@ -10,7 +10,7 @@ OYASUMI_MESSAGE = "ご主人様、お嬢様！只今 {} 時をお知らせしま
 
 def スケジュールされたお仕事をする(hour: int) -> Optional[str]:
     if hour == 8:
-        return OHAYO_MESSAGE.format(天気予報().get_weather())
+        return OHAYO_MESSAGE.format(天気予報().get_weather(130010, 0))
 
     if hour == 12:
         return OHIRU_MESSAGE.format(hour)

@@ -365,11 +365,14 @@ class 天気予報:
                 location = data["location"]["district"]
                 telop = data["forecasts"][forecasts_index]["telop"]
                 temperature = (
-                    data["forecasts"][forecasts_index]["temperature"]["max"]["celsius"] + "度"
+                    data["forecasts"][forecasts_index]["temperature"]["max"]["celsius"]
+                    + "度"
                 )
             except Exception:
                 pass
-            message = "{}の{}の天気は *{}* 、最高気温は {} です！".format(dateLabel, location, telop, temperature)
+            message = "{}の{}の天気は *{}* 、最高気温は {} です！".format(
+                dateLabel, location, telop, temperature
+            )
 
             # 降水確率が取れなかったのでとりあえず、天気に「雨」や「雪」が入ってたら傘を持てという
             if "雨" in telop or "雪" in telop:
@@ -401,7 +404,6 @@ class 天気予報:
             forecasts_index = 1
         if "明後日" in text:
             forecasts_index = 2
-        
 
         city = 130010  # 東京
         if "大阪" in text:
@@ -414,5 +416,5 @@ class 天気予報:
             city = "040010"
         if "札幌" in text:
             city = "016010"
-        
+
         return self.get_weather(city, forecasts_index)

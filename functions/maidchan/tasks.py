@@ -34,8 +34,8 @@ RequestBody = Dict[str, str]
 褒めるときのセリフ = "{誰}、{理由}んだ！すごーい！"
 褒めるときのセリフ理由なし版 = "{誰}！すごーい！"
 
-雑談お仕事リスト: List[Type] = []
-お屋敷お仕事リスト: List[Type] = []
+雑談お仕事リスト: List[Type] = []  # 雑談カフェのみに反応する機能
+お屋敷お仕事リスト: List[Type] = []  # すべてのチャネルに反応する機能
 
 
 def 雑談カフェのお仕事をする(body: RequestBody) -> Optional[str]:
@@ -44,8 +44,8 @@ def 雑談カフェのお仕事をする(body: RequestBody) -> Optional[str]:
     text = body["text"]
 
     for work in 雑談お仕事リスト:
-        if work.呼び出し(text, body):
-            return work.やったよ(text, body)
+        if work.is_target(text, body):
+            return work.perform(text, body)
 
     if "XXX" == text:  # pragma:nocover
         # 例外テスト
@@ -60,23 +60,48 @@ def お屋敷のお仕事をする(body: RequestBody) -> Optional[str]:
     text = body["text"]
 
     for work in お屋敷お仕事リスト:
-        if work.呼び出し(text, body):
-            return work.やったよ(text, body)
+        if work.is_target(text, body):
+            return work.perform(text, body)
 
     return None
 
 
+def _check_interface(cls):
+    """お仕事クラスに必要なメソッドを実装しているかチェック
+    """
+    if not hasattr(cls, "is_target"):  # pragma: nocover
+        raise TypeError(f"must implement is_target: {cls}")
+    if not hasattr(cls, "perform"):  # pragma: nocover
+        raise TypeError(f"must implement perform: {cls}")
+
+
 def zatsudan_work(cls):
+    """クラスを雑談カフェの仕事として登録するデコレーター
+    
+    このメソッドを適用するクラスは `is_target`, `perform` メソッドを実装する必要があります
+    """
+    _check_interface(cls)
     雑談お仕事リスト.append(cls())
     return cls
 
 
 def oyashiki_work(cls):
+    """クラスをお屋敷の仕事として登録するデコレーター
+    
+    このメソッドを適用するクラスは `is_target`, `perform` メソッドを実装する必要があります
+    """
+    _check_interface(cls)
     お屋敷お仕事リスト.append(cls())
     return cls
 
 
 def find_keyword(text: str, *keyword) -> bool:
+    """メッセージ本文からキーワードを見つける
+    
+    :param text: メッセージ本文
+    :param keyword: キーワード（複数指定可）
+    :return: キーワードが見つかったら True を返す
+    """
     for k in keyword:
         if k in text:
             return True
@@ -90,20 +115,22 @@ class どれがいいかな:
     迷うことがあったら雑談カフェで私に行ってね！私が選んであげるよ！「いか、たこどっちがいいかな？」「赤　青　きいろどれがいいかな？」みたいに聞いてね！
     """
 
-    def おしりを取る(self, text):
+    def get_target_suffix(self, text: str) -> str:
+        """「どれがいいかな？」の問いを満たす、末尾の組み合わせを全て試して、満たしたら末尾部分を返す
+        """
         for 読点 in ("", "？", "！", "。"):
             for いいかな in ("いいかな", "良いかな", "良いと思う", "いいと思う"):
                 for どれ in ("どれ", "どっち", "どの子"):
-                    おしり = f"{どれ}が{いいかな}{読点}"
-                    if text.endswith(おしり):
-                        return おしり
+                    suffix = f"{どれ}が{いいかな}{読点}"
+                    if text.endswith(suffix):
+                        return suffix
 
-    def 呼び出し(self, text, body):
-        return self.おしりを取る(text) is not None
+    def is_target(self, text, body):
+        return self.get_target_suffix(text) is not None
 
-    def やったよ(self, text, body):
-        言葉のおしり = self.おしりを取る(text)
-        選択肢 = text[: -len(言葉のおしり)].replace("、", " ").split()
+    def perform(self, text, body):
+        suffix = self.get_target_suffix(text)
+        選択肢 = text[: -len(suffix)].replace("、", " ").split()
         選んだもの = random.choice(選択肢)
         return 選んだよのセリフ.format(選んだもの)
 
@@ -112,10 +139,10 @@ class どれがいいかな:
 class 可愛い:
     """褒められると嬉しくなっちゃって、お屋敷の秘密教えちゃうかも！"""
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         return ("かわいい" in text or "可愛い" in text) and settings.メイドちゃんの名前 in text
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         返事 = random.choice(照れたときのメッセージリスト)
         if random.randint(1, 10) > 3:
             # 70%の確率でメイドちゃんが機能を教えてくれる
@@ -142,11 +169,11 @@ class 占って:
         #    Copyright (c) 2016 beproud
         #    https://github.com/beproud/beproudbot
         JST = datetime.timezone(datetime.timedelta(hours=+9), "JST")
-        今日 = datetime.datetime.now(tz=JST).strftime("%Y/%m/%d")
-        data = self._call_uranai_api(今日)
-        d = data["horoscope"][今日][self._calc_index(birthday)]
+        today = datetime.datetime.now(tz=JST).strftime("%Y/%m/%d")
+        data = self._call_uranai_api(today)
+        d = data["horoscope"][today][self._calc_index(birthday)]
         for s in ["total", "love", "money", "job"]:
-            d[s] = self.お星様きらり(d[s])
+            d[s] = self.star(d[s])
         return 本日の運勢.format(user_id, **d)
 
     @staticmethod
@@ -196,17 +223,17 @@ class 占って:
         星座 = (month + 8 + (day >= 区切り[(month - 1) % 12])) % 12
         return 星座
 
-    def お星様きらり(self, n):
-        # The お星様きらり:star() function is:
+    def star(self, n):
+        # The star() function is:
         #
         #    Copyright (c) 2016 beproud
         #    https://github.com/beproud/beproudbot
         return "★" * n + "☆" * (5 - n)
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         return text.startswith("占って！")
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         birthday = text[-4:]
         return self.占い(body.get("user_id"), birthday)
 
@@ -218,10 +245,10 @@ class おはよう:
     朝起きたら雑談カフェで一言言ってね！
     """
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         return find_keyword(text, "おはよう", "おはよー")
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         return 朝のご挨拶.format(body.get("user_id"))
 
 
@@ -232,10 +259,10 @@ class おやすみ:
     ご就寝前に雑談カフェで一言言ってね！
     """
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         return find_keyword(text, "おやすみ", "お休み", "寝")
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         return おやすみのご挨拶.format(body.get("user_id"))
 
 
@@ -246,10 +273,10 @@ class おかえり:
     帰ったら雑談カフェで言ってね！
     """
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         return find_keyword(text, "帰", "ただいま", "きたく", "かえる")
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         return おかえりのご挨拶.format(body.get("user_id"))
 
 
@@ -260,14 +287,14 @@ class 円周率言って:
     「ぱい」は円周率のことだよね！
     """
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         if "円周率" in text and "おしえて" in text:
             return True
         if "ぱい" in text or "パイ" in text or "π" in text:
             return True
         return False
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         return "3.1415926535897932384626433832795028841971693993"
 
 
@@ -278,10 +305,10 @@ class お疲れ様:
     疲れたら雑談カフェで言ってね！
     """
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         return find_keyword(text, "疲", "つかれ", "終", "おわた", "おわった")
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         return お疲れ様のセリフ.format(body.get("user_id"))
 
 
@@ -292,10 +319,10 @@ class 行ってらっしゃい:
     お出かけするときは `行ってきます` `いってきます` `出発` って雑談カフェで言ってね！
     """
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         return find_keyword(text, "行ってきます", "いってきます", "出かけ", "行きます", "いきます", "出発")
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         return いってらっしゃいのご挨拶.format(body.get("user_id"))
 
 
@@ -310,10 +337,10 @@ class 褒めて:
     私、どのチャネルにでも駆けつけるよ！
     """
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         return text.startswith("メイドちゃん！") and text.endswith("褒めて！")
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         return self.褒める(text[len("メイドちゃん！") : -len("褒めて") - 1], body.get("user_id"))
 
     def 褒める(self, text, user_id):
@@ -367,7 +394,7 @@ class 天気予報:
         return data
 
     def get_weather(self, city, forecasts_index):
-        """天気予報APIを呼び出して結果を読み込む"""
+        """天気予報APIをis_targetて結果を読み込む"""
 
         try:
             data = self._call_weather_api(city)
@@ -398,10 +425,10 @@ class 天気予報:
             logger.exception("Exception when getting weather")
             return "今日の天気は分かりません(;_;)"
 
-    def 呼び出し(self, text, body):
+    def is_target(self, text, body):
         return text.startswith("メイドちゃん！") and text.endswith("天気を教えて！")
 
-    def やったよ(self, text, body):
+    def perform(self, text, body):
         # 今何時かを調べる
         JST = datetime.timezone(datetime.timedelta(hours=+9), "JST")
         now = datetime.datetime.now(JST)

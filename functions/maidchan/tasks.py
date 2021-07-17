@@ -67,8 +67,7 @@ def お屋敷のお仕事をする(body: RequestBody) -> Optional[str]:
 
 
 def _check_interface(cls):
-    """お仕事クラスに必要なメソッドを実装しているかチェック
-    """
+    """お仕事クラスに必要なメソッドを実装しているかチェック"""
     if not hasattr(cls, "is_target"):  # pragma: nocover
         raise TypeError(f"must implement is_target: {cls}")
     if not hasattr(cls, "perform"):  # pragma: nocover
@@ -77,7 +76,7 @@ def _check_interface(cls):
 
 def zatsudan_work(cls):
     """クラスを雑談カフェの仕事として登録するデコレーター
-    
+
     このメソッドを適用するクラスは `is_target`, `perform` メソッドを実装する必要があります
     """
     _check_interface(cls)
@@ -87,7 +86,7 @@ def zatsudan_work(cls):
 
 def oyashiki_work(cls):
     """クラスをお屋敷の仕事として登録するデコレーター
-    
+
     このメソッドを適用するクラスは `is_target`, `perform` メソッドを実装する必要があります
     """
     _check_interface(cls)
@@ -97,7 +96,7 @@ def oyashiki_work(cls):
 
 def find_keyword(text: str, *keyword) -> bool:
     """メッセージ本文からキーワードを見つける
-    
+
     :param text: メッセージ本文
     :param keyword: キーワード（複数指定可）
     :return: キーワードが見つかったら True を返す
@@ -115,15 +114,15 @@ class どれがいいかな:
     迷うことがあったら雑談カフェで私に行ってね！私が選んであげるよ！「いか、たこどっちがいいかな？」「赤　青　きいろどれがいいかな？」みたいに聞いてね！
     """
 
-    def get_target_suffix(self, text: str) -> str:
-        """「どれがいいかな？」の問いを満たす、末尾の組み合わせを全て試して、満たしたら末尾部分を返す
-        """
+    def get_target_suffix(self, text: str) -> Optional[str]:
+        """「どれがいいかな？」の問いを満たす、末尾の組み合わせを全て試して、満たしたら末尾部分を返す"""
         for 読点 in ("", "？", "！", "。"):
             for いいかな in ("いいかな", "良いかな", "良いと思う", "いいと思う"):
                 for どれ in ("どれ", "どっち", "どの子"):
                     suffix = f"{どれ}が{いいかな}{読点}"
                     if text.endswith(suffix):
                         return suffix
+        return None
 
     def is_target(self, text, body):
         return self.get_target_suffix(text) is not None

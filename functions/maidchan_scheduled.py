@@ -24,6 +24,9 @@ def request_webhook(obj: Dict[str, Any]):
     logger.info("send message", obj)
     headers = {"Content-Type": "application/json"}
     json_data = json.dumps(obj).encode("utf-8")
+    if not settings.メイドちゃん発言用URL:
+        logger.warning("メイドちゃん発言用URLが設定されていませんよ")
+        return
     request = urllib.request.Request(
         settings.メイドちゃん発言用URL,
         data=json_data,

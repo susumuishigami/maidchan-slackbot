@@ -21,10 +21,68 @@ test
 $ make test
 ```
 
+test last failed with detail message
+```console
+$ make test-lf
+```
+
 lint
 ```console
 $ make lint
 ```
+
+# archetecture
+
+```
++ functions/                 .... lambda-function source code
+  + maichan/                .... maidchan core
+    - settings.py           .... settings variables by environment
+    - schedules.py          .... maidchan scheduled functions 
+    - tasks.py              .... maidchan functions hooked by slack message
+  - lambda_function.py      .... AWS lambda main
+  - maidchan_http.py        ....   + API Gateway main
+  - maidchan_scheduled.py   ....   + Scheduled Event main
+  - maidchan_debug.py
++ tests/                    .... unit test files
+  - 
+- Makefile
+```
+
+# How to make maidchan task
+
+edit functions/maidchan/tasks.py
+
+1. make class decorated by @zatsudan_work (for zatsudan cafe channel) or @oyashiki_work (for all channel)
+    - has method: `is_target(self, text, body)`
+    - has method: `perform(self, text, body)`
+
+    ```
+    @zatsudan_work
+    class TaskName:
+    def is_target(self, text, body):
+        pass
+    def perform(self, text, body):
+        pass
+    ```
+
+2. implement `is_target` method:
+    - return True: when text/body is target message
+    - return False: when text/body is not target message
+
+    ```
+    def perform(self, text, body):
+        # メッセージに「かわいい」と「メイドちゃん」が含まれていたら対象
+        return ("かわいい" in text) and ("メイドちゃん" in text)
+    ```
+
+3. implement `perform` method:
+    - return result message from maildchan
+    ```
+    def perform(self, text, body):
+        return "うれしい♪(^^)"
+    ```
+4. write unit test
+    - edit tests/test_zatsudan.py or tests/test_oyashiki.py
 
 # setup production environment
 

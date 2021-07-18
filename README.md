@@ -4,7 +4,7 @@ maidchan slack bot for maid cafe nomad workspace
 # setup develop environment
 
 ```console
-$ python3.9 -v venv venv
+$ python3.9 -m venv venv
 $ . venv/bin/activate
 $ make pip_dev
 ```

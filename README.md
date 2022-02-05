@@ -1,3 +1,5 @@
+このプロジェクトはメイドカフェでノマド会に管理を移管しました: https://github.com/maidnomad/maidchan-slackbot
+
 # maidchan-slackbot
 maidchan slack bot for maid cafe nomad workspace
 
